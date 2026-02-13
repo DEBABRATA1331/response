@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning Behavior Quest</title>
+<style>
+body{font-family:Inter,Arial;background:#020617;color:#e5e7eb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
+.card{width:760px;max-width:95%;background:#111827;padding:28px;border-radius:18px;box-shadow:0 25px 80px rgba(0,0,0,.7);text-align:center}
+button{margin:8px;padding:12px 16px;border:none;border-radius:10px;background:#1f2937;color:white;cursor:pointer}
+button:hover{background:#374151}
+.hidden{display:none}
+.bar{height:6px;background:#22d3ee;border-radius:6px;margin-bottom:18px}
+.gamebox{margin:20px 0;padding:20px;border:1px dashed #334155;border-radius:12px;min-height:90px}
+.score{font-size:30px;color:#22d3ee}
+input{padding:10px;border-radius:8px;border:none;background:#020617;color:#fff;width:70%}
+</style>
+</head>
+<body>
+<div class="card">
+<h2 id="title">Learning Behavior Quest</h2>
+<div class="bar" id="bar"></div>
+<div id="intro">
+<p>Enter your name to begin</p>
+<input id="name" placeholder="Your name"/>
+<br/><br/>
+<button onclick="start()">Start</button>
+</div>
+<div id="story" class="hidden">
+<p>You installed a learning app hoping to improve your future. Over the next few days, small decisions will decide whether learning becomes habit or disappears. Play honestly.</p>
+<button onclick="nextStep()">Continue</button>
+</div>
+<div id="game" class="gamebox hidden"></div>
+<h3 id="question" class="hidden"></h3>
+<div id="options"></div>
+</div>
+<script>
+const API_URL = "https://script.google.com/macros/s/AKfycbwmHvWkKUhF7yAIqO7vz7PeZli8apR3DdSPuFxheetMLOIxI_KExxL6WToFvPh-mQsn/exec";
+
+const steps=[
+{game:"tap",q:"Why did you install the app?",o:["Fear","Exam","Motivation","Friends","Curiosity"],s:[2,5,3,4,1]},
+{game:"reaction",q:"Reminder appears during scrolling",o:["Open","Delay","Mute","Ignore"],s:[5,3,2,0]},
+{game:"memory",q:"Lesson becomes hard",o:["Retry","Skip","Search","Quit"],s:[5,2,3,0]},
+{game:"timer",q:"Free 20 minutes available",o:["Study","Videos","Chat","Nothing"],s:[5,2,1,0]},
+{game:"choice",q:"You haven't opened for 2 days",o:["Restart","Use later","Not for me","Forgot"],s:[4,2,1,0]}
+];
+
+let i=-1,total=0,max=0,answers=[],username="";
+
+function start(){username=document.getElementById('name').value||"Anonymous";document.getElementById('intro').classList.add('hidden');document.getElementById('story').classList.remove('hidden');}
+function nextStep(){document.getElementById('story').classList.add('hidden');document.getElementById('game').classList.remove('hidden');i++;loadGame();}
+
+function loadGame(){document.getElementById('question').classList.add('hidden');document.getElementById('options').innerHTML='';const g=document.getElementById('game');g.innerHTML='';const type=steps[i].game;
+if(type==='tap'){g.innerHTML='<p>Tap the moving dot</p><div id="dot" style="width:30px;height:30px;background:#22d3ee;border-radius:50%;position:relative"></div>';let x=0;const dot=document.getElementById('dot');const int=setInterval(()=>{x=(x+50)%300;dot.style.left=x+'px';},300);dot.onclick=()=>{clearInterval(int);showQ();};}
+if(type==='reaction'){g.innerHTML='<p>Click when green</p><div id="box" style="height:60px;background:red"></div>';setTimeout(()=>{let b=document.getElementById('box');b.style.background='green';b.onclick=showQ;},1000+Math.random()*2000);} 
+if(type==='memory'){let n=Math.floor(Math.random()*90+10);g.innerHTML='<p>Remember '+n+'</p>';setTimeout(showQ,1500);} 
+if(type==='timer'){g.innerHTML='<p>Wait patiently...</p>';setTimeout(showQ,2000);} 
+if(type==='choice'){showQ();}
+document.getElementById('bar').style.width=(i/steps.length*100)+'%';}
+
+function showQ(){document.getElementById('question').classList.remove('hidden');document.getElementById('question').innerText=steps[i].q;steps[i].o.forEach((t,idx)=>{let b=document.createElement('button');b.innerText=t;b.onclick=()=>next(idx,t);document.getElementById('options').appendChild(b);});}
+
+function next(idx,text){answers.push(text);total+=steps[i].s[idx];max+=5;i++;if(i>=steps.length){finish();return;}loadGame();}
+
+async function finish(){let percent=Math.round(total/max*100);let label='Inconsistent Learner';if(percent>70)label='Habit Builder';else if(percent>40)label='Motivation Driven';
+
+const payload={name:username,score:percent,type:label,answers:answers};
+try{await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){console.log('Save failed',e);} 
+
+document.querySelector('.card').innerHTML=`<h2>${username}, your Behavioral Score</h2><div class='score'>${percent}%</div><p>${label}</p>`}
+</script>
+</body>
+</html>
