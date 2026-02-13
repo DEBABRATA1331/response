@@ -20,6 +20,7 @@ input{padding:10px;border-radius:8px;border:none;background:#020617;color:#fff;w
 </style>
 </head>
 <body>
+<iframe name="hidden_iframe" style="display:none"></iframe>
 <audio id="bgm" loop>
 <source src="bgmusic.mp3" type="audio/mpeg">
 </audio>
@@ -72,12 +73,14 @@ function showQ(){document.getElementById('question').classList.remove('hidden');
 
 function next(idx,text){answers.push(text);total+=steps[i].s[idx];max+=5;i++;if(i>=steps.length){finish();return;}loadGame();}
 
-async function finish(){let percent=Math.round(total/max*100);let label='Inconsistent Learner';if(percent>70)label='Habit Builder';else if(percent>40)label='Motivation Driven';
+function sendToSheet(data){const form=document.createElement('form');form.method='POST';form.action=API_URL;form.target='hidden_iframe';for(const key in data){const input=document.createElement('input');input.type='hidden';input.name=key;input.value=data[key];form.appendChild(input);}document.body.appendChild(form);form.submit();document.body.removeChild(form);} 
 
-const payload={name:username,score:percent,type:label,answers:answers};
-try{await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});}catch(e){console.log('Save failed',e);} 
+function finish(){let percent=Math.round(total/max*100);let label='Inconsistent Learner';if(percent>70)label='Habit Builder';else if(percent>40)label='Motivation Driven';
 
-document.querySelector('.card').innerHTML=`<h2>${username}, your Behavioral Score</h2><div class='score'>${percent}%</div><p>${label}</p>`}
+const payload={name:username,score:percent,type:label,answers:answers.join(' | ')};
+sendToSheet(payload);
+
+document.querySelector('.card').innerHTML=`<h2>${username}, your Behavioral Score</h2><div class='score'>${percent}%</div><p>${label}</p><small>Response recorded ✔</small>`}
 </script>
 </body>
 </html>
