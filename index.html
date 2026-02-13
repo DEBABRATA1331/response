@@ -3,11 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Learning Behavior Quest</title>
+<title>But why ? Game</title>
 <style>
-body{font-family:Inter,Arial;background:radial-gradient(circle at 50% 20%,#0f172a,#020617);color:#e5e7eb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;animation:bgmove 12s infinite alternate}
-@keyframes bgmove{0%{background-position:0 0}100%{background-position:100% 100%}}
-.card{width:760px;max-width:95%;background:rgba(17,24,39,.85);backdrop-filter:blur(10px);padding:28px;border-radius:18px;box-shadow:0 25px 80px rgba(0,0,0,.7);text-align:center;transition:.4s}
+body{font-family:Inter,Arial;background:radial-gradient(circle at 50% 20%,#0f172a,#020617);color:#e5e7eb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;overflow:hidden}
+
+/* Splash Screen with full image */
+#splash{position:absolute;inset:0;background:black;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;z-index:999;animation:fadeIn 1.2s ease}
+#splash::before{content:"";position:absolute;inset:0;background:url('but.png') center/cover no-repeat;opacity:.28;animation:zoomBg 5s ease forwards}
+#splash h1{position:relative;font-size:30px;max-width:760px;line-height:1.6;opacity:0;transform:translateY(40px);animation:rise 1.6s ease forwards}
+#splash button{position:relative;margin-top:40px;padding:14px 26px;border:none;border-radius:14px;font-size:16px;background:#22d3ee;color:#020617;cursor:pointer;opacity:0;animation:appear 2.5s forwards, glow 2s infinite}
+.brand{color:#38bdf8;font-weight:600}
+.highlight{color:#22d3ee;font-weight:700}
+@keyframes rise{to{opacity:1; transform:translateY(0);}}
+@keyframes appear{to{opacity:1;}}
+@keyframes glow{0%{box-shadow:0 0 0px #22d3ee;}50%{box-shadow:0 0 18px #22d3ee;}100%{box-shadow:0 0 0px #22d3ee;}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes zoomBg{from{transform:scale(1.2)}to{transform:scale(1)}}
+
+.card{display:none;width:760px;max-width:95%;background:rgba(17,24,39,.85);backdrop-filter:blur(10px);padding:28px;border-radius:18px;box-shadow:0 25px 80px rgba(0,0,0,.7);text-align:center;transition:.4s}
 button{margin:8px;padding:12px 16px;border:none;border-radius:10px;background:#1f2937;color:white;cursor:pointer;transition:.25s transform,.25s background}
 button:hover{background:#374151;transform:translateY(-2px) scale(1.03)}
 .hidden{display:none}
@@ -20,13 +33,26 @@ input{padding:10px;border-radius:8px;border:none;background:#020617;color:#fff;w
 </style>
 </head>
 <body>
+<!-- Intro Splash Screen -->
+<div id="splash">
+  <h1>
+    Maybe you have tried apps like<br>
+    <span class="brand">PW</span>,
+    <span class="brand">Unacademy</span>,
+    <span class="brand">Vedantu</span>…<br><br>
+    But learning never really stayed.<br>
+    <span class="highlight">This is not a test.</span><br>
+    This is a small game about your decisions.
+  </h1>
+  <button onclick="enterExperience()">Begin</button>
+</div>
+
 <iframe name="hidden_iframe" style="display:none"></iframe>
-<audio id="bgm" loop>
-<source src="bgmusic.mp3" type="audio/mpeg">
-</audio>
+<audio id="introSound"><source src="fahhh.mpeg" type="audio/mpeg"></audio>
+<audio id="bgm" loop><source src="bgmusic.mp3" type="audio/mpeg"></audio>
 <button id="musicToggle" onclick="toggleMusic()">🔊 Sound</button>
 <div class="card">
-<h2 id="title">Learning Behavior Quest</h2>
+<h2 id="title">But why?</h2>
 <div class="bar" id="bar"></div>
 <div id="intro">
 <p>Enter your name to begin</p>
@@ -47,6 +73,7 @@ const API_URL = "https://script.google.com/macros/s/AKfycbwmHvWkKUhF7yAIqO7vz7Pe
 const music=document.getElementById('bgm');
 let musicOn=false;
 function toggleMusic(){musicOn=!musicOn;if(musicOn){music.play();document.getElementById('musicToggle').innerText='🔊 Sound'}else{music.pause();document.getElementById('musicToggle').innerText='🔇 Muted'}}
+function enterExperience(){document.getElementById('introSound').play().catch(()=>{});setTimeout(()=>{document.getElementById('splash').style.display='none';document.querySelector('.card').style.display='block'},900)}
 
 const steps=[
 {game:"tap",q:"Why did you install the app?",o:["Fear","Exam","Motivation","Friends","Curiosity"],s:[2,5,3,4,1]},
@@ -62,7 +89,13 @@ function start(){music.play().catch(()=>{});musicOn=true;username=document.getEl
 function nextStep(){document.getElementById('story').classList.add('hidden');document.getElementById('game').classList.remove('hidden');i++;loadGame();}
 
 function loadGame(){document.getElementById('question').classList.add('hidden');document.getElementById('options').innerHTML='';const g=document.getElementById('game');g.innerHTML='';const type=steps[i].game;
-if(type==='tap'){g.innerHTML='<p>Tap the moving dot</p><div id="dot" style="width:30px;height:30px;background:#22d3ee;border-radius:50%;position:relative"></div>';let x=0;const dot=document.getElementById('dot');const int=setInterval(()=>{x=(x+50)%300;dot.style.left=x+'px';},300);dot.onclick=()=>{clearInterval(int);showQ();};}
+if(type==='tap'){
+  g.innerHTML='<p>Tap the moving dot</p><div id="dot" style="width:34px;height:34px;background:#22d3ee;border-radius:50%;position:absolute"></div>';
+  const dot=document.getElementById('dot');
+  let x=0,dir=1;
+  function animate(){x+=dir*2;if(x>260||x<0)dir*=-1;dot.style.transform=`translateX(${x}px)`;requestAnimationFrame(animate);}animate();
+  dot.onclick=()=>showQ();
+}
 if(type==='reaction'){g.innerHTML='<p>Click when green</p><div id="box" style="height:60px;background:red;border-radius:10px"></div>';setTimeout(()=>{let b=document.getElementById('box');b.style.background='green';b.onclick=showQ;},1000+Math.random()*2000);} 
 if(type==='memory'){let n=Math.floor(Math.random()*90+10);g.innerHTML='<p>Remember '+n+'</p>';setTimeout(showQ,1500);} 
 if(type==='timer'){g.innerHTML='<p>Wait patiently...</p>';setTimeout(showQ,2000);} 
@@ -76,10 +109,8 @@ function next(idx,text){answers.push(text);total+=steps[i].s[idx];max+=5;i++;if(
 function sendToSheet(data){const form=document.createElement('form');form.method='POST';form.action=API_URL;form.target='hidden_iframe';for(const key in data){const input=document.createElement('input');input.type='hidden';input.name=key;input.value=data[key];form.appendChild(input);}document.body.appendChild(form);form.submit();document.body.removeChild(form);} 
 
 function finish(){let percent=Math.round(total/max*100);let label='Inconsistent Learner';if(percent>70)label='Habit Builder';else if(percent>40)label='Motivation Driven';
-
 const payload={name:username,score:percent,type:label,answers:answers.join(' | ')};
 sendToSheet(payload);
-
 document.querySelector('.card').innerHTML=`<h2>${username}, your Behavioral Score</h2><div class='score'>${percent}%</div><p>${label}</p><small>Response recorded ✔</small>`}
 </script>
 </body>
