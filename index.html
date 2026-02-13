@@ -5,18 +5,25 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Learning Behavior Quest</title>
 <style>
-body{font-family:Inter,Arial;background:#020617;color:#e5e7eb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}
-.card{width:760px;max-width:95%;background:#111827;padding:28px;border-radius:18px;box-shadow:0 25px 80px rgba(0,0,0,.7);text-align:center}
-button{margin:8px;padding:12px 16px;border:none;border-radius:10px;background:#1f2937;color:white;cursor:pointer}
-button:hover{background:#374151}
+body{font-family:Inter,Arial;background:radial-gradient(circle at 50% 20%,#0f172a,#020617);color:#e5e7eb;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;animation:bgmove 12s infinite alternate}
+@keyframes bgmove{0%{background-position:0 0}100%{background-position:100% 100%}}
+.card{width:760px;max-width:95%;background:rgba(17,24,39,.85);backdrop-filter:blur(10px);padding:28px;border-radius:18px;box-shadow:0 25px 80px rgba(0,0,0,.7);text-align:center;transition:.4s}
+button{margin:8px;padding:12px 16px;border:none;border-radius:10px;background:#1f2937;color:white;cursor:pointer;transition:.25s transform,.25s background}
+button:hover{background:#374151;transform:translateY(-2px) scale(1.03)}
 .hidden{display:none}
-.bar{height:6px;background:#22d3ee;border-radius:6px;margin-bottom:18px}
-.gamebox{margin:20px 0;padding:20px;border:1px dashed #334155;border-radius:12px;min-height:90px}
+.bar{height:6px;background:linear-gradient(90deg,#22d3ee,#38bdf8);border-radius:6px;margin-bottom:18px;transition:width .4s ease}
+.gamebox{margin:20px 0;padding:20px;border:1px dashed #334155;border-radius:12px;min-height:90px;animation:fade .5s}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 .score{font-size:30px;color:#22d3ee}
 input{padding:10px;border-radius:8px;border:none;background:#020617;color:#fff;width:70%}
+#musicToggle{position:absolute;top:20px;right:20px;font-size:13px;padding:8px 12px;background:#0f172a}
 </style>
 </head>
 <body>
+<audio id="bgm" loop>
+<source src="bgmusic.mp3" type="audio/mpeg">
+</audio>
+<button id="musicToggle" onclick="toggleMusic()">🔊 Sound</button>
 <div class="card">
 <h2 id="title">Learning Behavior Quest</h2>
 <div class="bar" id="bar"></div>
@@ -36,6 +43,9 @@ input{padding:10px;border-radius:8px;border:none;background:#020617;color:#fff;w
 </div>
 <script>
 const API_URL = "https://script.google.com/macros/s/AKfycbwmHvWkKUhF7yAIqO7vz7PeZli8apR3DdSPuFxheetMLOIxI_KExxL6WToFvPh-mQsn/exec";
+const music=document.getElementById('bgm');
+let musicOn=false;
+function toggleMusic(){musicOn=!musicOn;if(musicOn){music.play();document.getElementById('musicToggle').innerText='🔊 Sound'}else{music.pause();document.getElementById('musicToggle').innerText='🔇 Muted'}}
 
 const steps=[
 {game:"tap",q:"Why did you install the app?",o:["Fear","Exam","Motivation","Friends","Curiosity"],s:[2,5,3,4,1]},
@@ -47,12 +57,12 @@ const steps=[
 
 let i=-1,total=0,max=0,answers=[],username="";
 
-function start(){username=document.getElementById('name').value||"Anonymous";document.getElementById('intro').classList.add('hidden');document.getElementById('story').classList.remove('hidden');}
+function start(){music.play().catch(()=>{});musicOn=true;username=document.getElementById('name').value||"Anonymous";document.getElementById('intro').classList.add('hidden');document.getElementById('story').classList.remove('hidden');}
 function nextStep(){document.getElementById('story').classList.add('hidden');document.getElementById('game').classList.remove('hidden');i++;loadGame();}
 
 function loadGame(){document.getElementById('question').classList.add('hidden');document.getElementById('options').innerHTML='';const g=document.getElementById('game');g.innerHTML='';const type=steps[i].game;
 if(type==='tap'){g.innerHTML='<p>Tap the moving dot</p><div id="dot" style="width:30px;height:30px;background:#22d3ee;border-radius:50%;position:relative"></div>';let x=0;const dot=document.getElementById('dot');const int=setInterval(()=>{x=(x+50)%300;dot.style.left=x+'px';},300);dot.onclick=()=>{clearInterval(int);showQ();};}
-if(type==='reaction'){g.innerHTML='<p>Click when green</p><div id="box" style="height:60px;background:red"></div>';setTimeout(()=>{let b=document.getElementById('box');b.style.background='green';b.onclick=showQ;},1000+Math.random()*2000);} 
+if(type==='reaction'){g.innerHTML='<p>Click when green</p><div id="box" style="height:60px;background:red;border-radius:10px"></div>';setTimeout(()=>{let b=document.getElementById('box');b.style.background='green';b.onclick=showQ;},1000+Math.random()*2000);} 
 if(type==='memory'){let n=Math.floor(Math.random()*90+10);g.innerHTML='<p>Remember '+n+'</p>';setTimeout(showQ,1500);} 
 if(type==='timer'){g.innerHTML='<p>Wait patiently...</p>';setTimeout(showQ,2000);} 
 if(type==='choice'){showQ();}
